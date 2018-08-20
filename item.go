@@ -11,7 +11,7 @@ const (
 )
 
 type item struct {
-	ID          int         `json:"id"`
+	Id          int         `json:"id"`
 	Name        string      `json:"name"`
 	Dosage      string      `json:"dosage"`
 	TakenToday  bool        `json:"takenToday"`
@@ -19,3 +19,5 @@ type item struct {
 	ServingType servingType `json:"servingType"` // scoop, pill, drop Todo use enum later
 	Timing      time.Time   `json:"timing"`
 }
+
+type Items []item

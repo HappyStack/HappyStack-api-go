@@ -21,9 +21,21 @@ var routes = Routes{
 		list,
 	},
 	Route{
+		"ItemsCreate",
+		"POST",
+		"/items",
+		itemsCreate,
+	},
+	Route{
 		"ItemsShow",
 		"GET",
 		"/items/{itemId}",
 		show,
+	},
+	Route{
+		"ItemsDelete",
+		"DELETE",
+		"/items/{itemId}",
+		delete,
 	},
 }

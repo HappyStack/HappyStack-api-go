@@ -38,4 +38,10 @@ var routes = Routes{
 		"/items/{itemId}",
 		delete,
 	},
+	Route{
+		"Login",
+		"POST",
+		"/login",
+		loginHandler,
+	},
 }

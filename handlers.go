@@ -2,11 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
+	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
@@ -75,4 +79,44 @@ func delete(w http.ResponseWriter, r *http.Request) {
 func itemIDForRequest(r *http.Request) (int, error) {
 	itemIDString := mux.Vars(r)["itemId"]
 	return strconv.Atoi(itemIDString)
+}
+
+// Login
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	var user UserCredentials
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "Error in request")
+		return
+	}
+
+	fmt.Println(user.Username, user.Password)
+
+	// Here validate those are valid credentials.
+	wrongCredentials := (user.Username != "admin") || (user.Password != "1234")
+	if wrongCredentials {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "Wrong credentials")
+		return
+	}
+
+	// If so then generate auth token.
+	signer := jwt.New(jwt.SigningMethodHS256)
+
+	claims := make(jwt.MapClaims)
+	claims["usename"] = user.Username
+	claims["exp"] = time.Now().Add(time.Minute * 20).Unix()
+	signer.Claims = claims
+	tokenString, err := signer.SignedString(SignKey)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "Error while signing the token")
+		log.Printf("Error signing the token %v\n", err)
+	}
+
+	token := Token{Token: tokenString}
+	json.NewEncoder(w).Encode(token)
 }

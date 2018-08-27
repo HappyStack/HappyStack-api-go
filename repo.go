@@ -43,7 +43,7 @@ func repoCloseDatabase() {
 }
 
 func repoAllItems() []item {
-	query := `SELECT item_id, name FROM item`
+	query := `SELECT item_id, name, dosage, taken_today, serving_size, serving_type FROM item`
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Fatal(err)
@@ -54,7 +54,7 @@ func repoAllItems() []item {
 	var dbItems []item
 	for rows.Next() {
 		var dbItem item
-		err = rows.Scan(&dbItem.Id, &dbItem.Name)
+		err = rows.Scan(&dbItem.Id, &dbItem.Name, &dbItem.Dosage, &dbItem.TakenToday, &dbItem.ServingSize, &dbItem.ServingType)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -74,11 +74,24 @@ func repoFindItem(id int) item {
 	return item{}
 }
 
-func repoCreateItem(i item) item {
-	currentId++
-	i.Id = currentId
-	items = append(items, i)
-	return i
+func repoCreateItem(i item) (item, error) {
+
+	// Enforce default
+	if i.ServingSize == 0 {
+		i.ServingSize = 1
+	}
+	if i.ServingType == "" {
+		i.ServingType = pill
+	}
+
+	query := `INSERT INTO item (name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5) RETURNING item_id;`
+	var createdItemId int
+	err := db.QueryRow(query, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
+	if err != nil {
+		return item{}, err
+	}
+	i.Id = createdItemId
+	return i, nil
 }
 
 func repoDestroyItem(id int) error {

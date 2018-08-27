@@ -52,10 +52,15 @@ func itemsCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := repoCreateItem(item)
+	newItem, err := repoCreateItem(item)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
+	if err := json.NewEncoder(w).Encode(newItem); err != nil {
 		panic(err)
 	}
 }

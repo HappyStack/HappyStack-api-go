@@ -1,42 +1,17 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-
-	_ "github.com/lib/pq"
-)
-
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "sacha"
-	password = ""
-	dbname   = "sacha"
 )
 
 func main() {
 	initKeys()
 
-	// TODO add DB password
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-		host, port, user, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Successfully connected to database!")
+	repoInitDatabase()
+	defer repoCloseDatabase()
 
 	fmt.Println(SignKey)
 	fmt.Println(VerifyKey)

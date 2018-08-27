@@ -1,25 +1,67 @@
 package main
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+	"log"
+
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "sacha"
+	password = ""
+	dbname   = "sacha"
+)
 
 var currentId int
 
 var items Items
 
-func init() {
+var db *sql.DB
 
-	// Seed Data
-	item1 := item{
-		Name:        "Vitamin D",
-		Dosage:      "2000 UI",
-		TakenToday:  true,
-		ServingSize: 2,
-		ServingType: pill}
-	item2 := item{Name: "Magnesium"}
-	item3 := item{Name: "Zinc"}
-	repoCreateItem(item1)
-	repoCreateItem(item2)
-	repoCreateItem(item3)
+func repoInitDatabase() {
+	// TODO add DB password
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
+		host, port, user, dbname)
+
+	adb, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	err = adb.Ping()
+	if err != nil {
+		panic(err)
+	}
+	db = adb
+}
+
+func repoCloseDatabase() {
+	db.Close()
+}
+
+func repoAllItems() []item {
+	query := `SELECT item_id, name FROM item`
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Fatal(err)
+		return []item{}
+	}
+	defer rows.Close()
+
+	var dbItems []item
+	for rows.Next() {
+		var dbItem item
+		err = rows.Scan(&dbItem.Id, &dbItem.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(dbItem)
+		dbItems = append(dbItems, dbItem)
+	}
+	return dbItems
 }
 
 func repoFindItem(id int) item {

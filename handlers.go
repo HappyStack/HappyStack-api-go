@@ -22,8 +22,9 @@ func list(w http.ResponseWriter, r *http.Request) {
 
 	// Explicitely set status code
 	w.WriteHeader(http.StatusOK)
+	dbItems := repoAllItems()
 
-	if err := json.NewEncoder(w).Encode(items); err != nil {
+	if err := json.NewEncoder(w).Encode(dbItems); err != nil {
 		panic(err)
 	}
 }

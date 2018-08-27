@@ -23,7 +23,7 @@ var routes = Routes{
 	Route{
 		"ItemsCreate",
 		"POST",
-		"/items",
+		"/users/{userId}/items",
 		itemsCreate,
 	},
 	Route{

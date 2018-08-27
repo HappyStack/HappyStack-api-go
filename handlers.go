@@ -39,6 +39,8 @@ func list(w http.ResponseWriter, r *http.Request) {
 // Create
 func itemsCreate(w http.ResponseWriter, r *http.Request) {
 
+	userIDToShow, _ := userIDForRequest(r)
+
 	var item item
 
 	// Parse the body and use LimitReader to prevent from attacks (big requests).
@@ -59,6 +61,7 @@ func itemsCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	item.userId = userIDToShow
 	newItem, err := happyStackDatabase.createItem(item)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

@@ -1,13 +1,38 @@
 # HappyStack-api-go
 HappyStack api written in Go
 
+
+
 ## Api
 
 ### List items
-GET /items
+GET `users/:userId/items`  
+
+#### Response
+```json
+[{
+		"id": 1,
+		"name": "Magnesium",
+		"dosage": "some",
+		"takenToday": false,
+		"servingSize": 1,
+		"servingType": "pill",
+		"timing": "0001-01-01T00:00:00Z"
+	},
+	{
+		"id": 7,
+		"name": "Vitamine k",
+		"dosage": "",
+		"takenToday": false,
+		"servingSize": 1,
+		"servingType": "pill",
+		"timing": "0001-01-01T00:00:00Z"
+	}
+]
+```
 
 ### Add item
-`POST /items`  
+POST `users/:userId/items`  
 ```json
 {
   "name": "Vitamin D",

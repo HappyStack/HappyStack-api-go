@@ -88,9 +88,9 @@ func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
 		i.ServingType = pill
 	}
 
-	query := `INSERT INTO items (name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5) RETURNING item_id;`
+	query := `INSERT INTO items (user_id, name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING item_id;`
 	var createdItemId int
-	err := hsdb.sqlDB.QueryRow(query, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
+	err := hsdb.sqlDB.QueryRow(query, i.userId, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
 	if err != nil {
 		return item{}, err
 	}

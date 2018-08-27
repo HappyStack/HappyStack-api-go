@@ -22,7 +22,7 @@ func list(w http.ResponseWriter, r *http.Request) {
 
 	// Explicitely set status code
 	w.WriteHeader(http.StatusOK)
-	dbItems := repoAllItems()
+	dbItems := happyStackDatabase.allItems()
 
 	if err := json.NewEncoder(w).Encode(dbItems); err != nil {
 		panic(err)
@@ -52,7 +52,7 @@ func itemsCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	newItem, err := repoCreateItem(item)
+	newItem, err := happyStackDatabase.createItem(item)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err)
@@ -68,7 +68,7 @@ func itemsCreate(w http.ResponseWriter, r *http.Request) {
 //Show
 func show(w http.ResponseWriter, r *http.Request) {
 	itemIDToShow, _ := itemIDForRequest(r)
-	itemToShow := repoFindItem(itemIDToShow)
+	itemToShow := happyStackDatabase.findItem(itemIDToShow)
 	json.NewEncoder(w).Encode(itemToShow)
 }
 
@@ -76,7 +76,7 @@ func show(w http.ResponseWriter, r *http.Request) {
 func delete(w http.ResponseWriter, r *http.Request) {
 	itemIDToDelete, _ := itemIDForRequest(r)
 
-	if repoDestroyItem(itemIDToDelete) != nil {
+	if happyStackDatabase.destroyItem(itemIDToDelete) != nil {
 		json.NewEncoder(w).Encode("DOES NOT EXIST")
 	}
 }

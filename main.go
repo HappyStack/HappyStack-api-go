@@ -7,11 +7,13 @@ import (
 	"net/http"
 )
 
+var happyStackDatabase *HappyStackDatabase
+
 func main() {
 	initKeys()
 
-	repoInitDatabase()
-	defer repoCloseDatabase()
+	happyStackDatabase = NewHappyStackDatabase()
+	defer happyStackDatabase.closeDatabase()
 
 	fmt.Println(SignKey)
 	fmt.Println(VerifyKey)

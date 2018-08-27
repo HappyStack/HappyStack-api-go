@@ -20,9 +20,12 @@ var currentId int
 
 var items Items
 
-var db *sql.DB
+type HappyStackDatabase struct {
+	sqlDB *sql.DB
+}
 
-func repoInitDatabase() {
+func NewHappyStackDatabase() *HappyStackDatabase {
+
 	// TODO add DB password
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
 		host, port, user, dbname)
@@ -35,16 +38,16 @@ func repoInitDatabase() {
 	if err != nil {
 		panic(err)
 	}
-	db = adb
+	return &HappyStackDatabase{sqlDB: adb}
 }
 
-func repoCloseDatabase() {
-	db.Close()
+func (hsdb *HappyStackDatabase) closeDatabase() {
+	hsdb.sqlDB.Close()
 }
 
-func repoAllItems() []item {
+func (hsdb *HappyStackDatabase) allItems() []item {
 	query := `SELECT item_id, name, dosage, taken_today, serving_size, serving_type FROM item`
-	rows, err := db.Query(query)
+	rows, err := hsdb.sqlDB.Query(query)
 	if err != nil {
 		log.Fatal(err)
 		return []item{}
@@ -64,7 +67,7 @@ func repoAllItems() []item {
 	return dbItems
 }
 
-func repoFindItem(id int) item {
+func (hsdb *HappyStackDatabase) findItem(id int) item {
 	for _, i := range items {
 		if i.Id == id {
 			return i
@@ -74,7 +77,7 @@ func repoFindItem(id int) item {
 	return item{}
 }
 
-func repoCreateItem(i item) (item, error) {
+func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
 
 	// Enforce default
 	if i.ServingSize == 0 {
@@ -86,7 +89,7 @@ func repoCreateItem(i item) (item, error) {
 
 	query := `INSERT INTO item (name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5) RETURNING item_id;`
 	var createdItemId int
-	err := db.QueryRow(query, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
+	err := hsdb.sqlDB.QueryRow(query, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
 	if err != nil {
 		return item{}, err
 	}
@@ -94,7 +97,7 @@ func repoCreateItem(i item) (item, error) {
 	return i, nil
 }
 
-func repoDestroyItem(id int) error {
+func (hsdb *HappyStackDatabase) destroyItem(id int) error {
 	for i, item := range items {
 		if item.Id == id {
 			items = append(items[:i], items[i+1:]...)

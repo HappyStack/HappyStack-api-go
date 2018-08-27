@@ -14,15 +14,22 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// URL Helper
+func userIDForRequest(r *http.Request) (int, error) {
+	userIDString := mux.Vars(r)["userId"]
+	return strconv.Atoi(userIDString)
+}
+
 //List
 func list(w http.ResponseWriter, r *http.Request) {
+	userIDToShow, _ := userIDForRequest(r)
 
 	// Tell the client to expect json
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	// Explicitely set status code
 	w.WriteHeader(http.StatusOK)
-	dbItems := happyStackDatabase.allItems()
+	dbItems := happyStackDatabase.allItemsForUserId(userIDToShow)
 
 	if err := json.NewEncoder(w).Encode(dbItems); err != nil {
 		panic(err)

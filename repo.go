@@ -45,9 +45,10 @@ func (hsdb *HappyStackDatabase) closeDatabase() {
 	hsdb.sqlDB.Close()
 }
 
-func (hsdb *HappyStackDatabase) allItems() []item {
-	query := `SELECT item_id, name, dosage, taken_today, serving_size, serving_type FROM item`
-	rows, err := hsdb.sqlDB.Query(query)
+func (hsdb *HappyStackDatabase) allItemsForUserId(userId int) []item {
+
+	query := `SELECT item_id, user_id, name, dosage, taken_today, serving_size, serving_type FROM items WHERE user_id = $1;`
+	rows, err := hsdb.sqlDB.Query(query, userId)
 	if err != nil {
 		log.Fatal(err)
 		return []item{}
@@ -57,7 +58,7 @@ func (hsdb *HappyStackDatabase) allItems() []item {
 	var dbItems []item
 	for rows.Next() {
 		var dbItem item
-		err = rows.Scan(&dbItem.Id, &dbItem.Name, &dbItem.Dosage, &dbItem.TakenToday, &dbItem.ServingSize, &dbItem.ServingType)
+		err = rows.Scan(&dbItem.Id, &dbItem.userId, &dbItem.Name, &dbItem.Dosage, &dbItem.TakenToday, &dbItem.ServingSize, &dbItem.ServingType)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -87,7 +88,7 @@ func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
 		i.ServingType = pill
 	}
 
-	query := `INSERT INTO item (name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5) RETURNING item_id;`
+	query := `INSERT INTO items (name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5) RETURNING item_id;`
 	var createdItemId int
 	err := hsdb.sqlDB.QueryRow(query, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
 	if err != nil {

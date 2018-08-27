@@ -12,6 +12,7 @@ const (
 
 type item struct {
 	Id          int         `json:"id", db:"item_id"`
+	userId      int         `json:"userId", db:"user_id"`
 	Name        string      `json:"name", db:"name"`
 	Dosage      string      `json:"dosage"`
 	TakenToday  bool        `json:"takenToday"`

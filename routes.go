@@ -17,7 +17,7 @@ var routes = Routes{
 	Route{
 		"ItemsIndex",
 		"GET",
-		"/items",
+		"/users/{userId}/items",
 		list,
 	},
 	Route{

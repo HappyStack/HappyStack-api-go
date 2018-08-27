@@ -99,11 +99,7 @@ func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
 }
 
 func (hsdb *HappyStackDatabase) destroyItem(id int) error {
-	for i, item := range items {
-		if item.Id == id {
-			items = append(items[:i], items[i+1:]...)
-			return nil
-		}
-	}
-	return fmt.Errorf("Could not find Todo with id of %d to delete", id)
+	query := `DELETE FROM items WHERE "item_id"=$1;`
+	_, err := hsdb.sqlDB.Exec(query, id)
+	return err
 }

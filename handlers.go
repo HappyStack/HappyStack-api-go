@@ -84,6 +84,9 @@ func show(w http.ResponseWriter, r *http.Request) {
 
 // Delete
 func delete(w http.ResponseWriter, r *http.Request) {
+	// Todo make sure this is the logged in user that deletes
+	// his own item.
+	//userID, _ := userIDForRequest(r)
 	itemIDToDelete, _ := itemIDForRequest(r)
 
 	if happyStackDatabase.destroyItem(itemIDToDelete) != nil {

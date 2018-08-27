@@ -35,7 +35,7 @@ var routes = Routes{
 	Route{
 		"ItemsDelete",
 		"DELETE",
-		"/items/{itemId}",
+		"/users/{userId}/items/{itemId}",
 		delete,
 	},
 	Route{

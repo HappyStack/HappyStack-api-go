@@ -11,9 +11,9 @@ import (
 const (
 	host     = "localhost"
 	port     = 5432
-	user     = "sacha"
-	password = ""
-	dbname   = "sacha"
+	user     = "happystack"
+	password = "password"
+	dbname   = "happystack"
 )
 
 var currentId int
@@ -27,8 +27,8 @@ type HappyStackDatabase struct {
 func NewHappyStackDatabase() *HappyStackDatabase {
 
 	// TODO add DB password
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-		host, port, user, dbname)
+	psqlInfo := fmt.Sprintf("host=%s password=%s port=%d user=%s dbname=%s sslmode=disable",
+		host, password, port, user, dbname)
 
 	adb, err := sql.Open("postgres", psqlInfo)
 	if err != nil {

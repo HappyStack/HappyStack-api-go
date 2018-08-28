@@ -27,6 +27,12 @@ var routes = Routes{
 		itemsCreate,
 	},
 	Route{
+		"ItemsUpdate",
+		"PUT",
+		"/users/{userId}/items/{itemId}",
+		itemsUpdate,
+	},
+	Route{
 		"ItemsShow",
 		"GET",
 		"/items/{itemId}",

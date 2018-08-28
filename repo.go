@@ -98,6 +98,27 @@ func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
 	return i, nil
 }
 
+func (hsdb *HappyStackDatabase) updateItem(i item) (item, error) {
+	query := `
+	UPDATE items
+	SET name = $2
+	WHERE item_id = $1;`
+	res, err := hsdb.sqlDB.Exec(query, i.Id, i.Name)
+	if err != nil {
+		return item{Name: "error"}, err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+	if count == 0 {
+		fmt.Println(err)
+	}
+
+	return i, nil
+}
+
 func (hsdb *HappyStackDatabase) destroyItem(id int) error {
 	query := `DELETE FROM items WHERE "item_id"=$1;`
 	_, err := hsdb.sqlDB.Exec(query, id)

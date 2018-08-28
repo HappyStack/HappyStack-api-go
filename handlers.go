@@ -75,6 +75,45 @@ func itemsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Update
+func itemsUpdate(w http.ResponseWriter, r *http.Request) {
+
+	// TODO: Check this belongs to the currently connected user.
+	itemIDToShow, _ := itemIDForRequest(r)
+
+	// Parse the body and use LimitReader to prevent from attacks (big requests).
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	if err := r.Body.Close(); err != nil {
+		panic(err)
+	}
+
+	var item item
+	// Try to parse the JSON body into an item.
+	if err := json.Unmarshal(body, &item); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+	item.Id = itemIDToShow
+
+	newItem, err := happyStackDatabase.updateItem(item)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(newItem); err != nil {
+		panic(err)
+	}
+}
+
 //Show
 func show(w http.ResponseWriter, r *http.Request) {
 	itemIDToShow, _ := itemIDForRequest(r)

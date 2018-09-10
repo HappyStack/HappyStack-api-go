@@ -1,28 +1,74 @@
 package main
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+	"log"
+
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "happystack"
+	password = "password"
+	dbname   = "happystack"
+)
 
 var currentId int
 
 var items Items
 
-func init() {
-
-	// Seed Data
-	item1 := item{
-		Name:        "Vitamin D",
-		Dosage:      "2000 UI",
-		TakenToday:  true,
-		ServingSize: 2,
-		ServingType: pill}
-	item2 := item{Name: "Magnesium"}
-	item3 := item{Name: "Zinc"}
-	repoCreateItem(item1)
-	repoCreateItem(item2)
-	repoCreateItem(item3)
+type HappyStackDatabase struct {
+	sqlDB *sql.DB
 }
 
-func repoFindItem(id int) item {
+func NewHappyStackDatabase() *HappyStackDatabase {
+
+	// TODO add DB password
+	psqlInfo := fmt.Sprintf("host=%s password=%s port=%d user=%s dbname=%s sslmode=disable",
+		host, password, port, user, dbname)
+
+	adb, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	err = adb.Ping()
+	if err != nil {
+		panic(err)
+	}
+	return &HappyStackDatabase{sqlDB: adb}
+}
+
+func (hsdb *HappyStackDatabase) closeDatabase() {
+	hsdb.sqlDB.Close()
+}
+
+func (hsdb *HappyStackDatabase) allItemsForUserId(userId int) []item {
+
+	query := `SELECT item_id, user_id, name, dosage, taken_today, serving_size, serving_type FROM items WHERE user_id = $1;`
+	rows, err := hsdb.sqlDB.Query(query, userId)
+	if err != nil {
+		log.Fatal(err)
+		return []item{}
+	}
+	defer rows.Close()
+
+	var dbItems []item
+	for rows.Next() {
+		var dbItem item
+		err = rows.Scan(&dbItem.Id, &dbItem.userId, &dbItem.Name, &dbItem.Dosage, &dbItem.TakenToday, &dbItem.ServingSize, &dbItem.ServingType)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(dbItem)
+		dbItems = append(dbItems, dbItem)
+	}
+	return dbItems
+}
+
+func (hsdb *HappyStackDatabase) findItem(id int) item {
 	for _, i := range items {
 		if i.Id == id {
 			return i
@@ -32,19 +78,49 @@ func repoFindItem(id int) item {
 	return item{}
 }
 
-func repoCreateItem(i item) item {
-	currentId++
-	i.Id = currentId
-	items = append(items, i)
-	return i
+func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
+
+	// Enforce default
+	if i.ServingSize == 0 {
+		i.ServingSize = 1
+	}
+	if i.ServingType == "" {
+		i.ServingType = pill
+	}
+
+	query := `INSERT INTO items (user_id, name, dosage, taken_today, serving_size, serving_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING item_id;`
+	var createdItemId int
+	err := hsdb.sqlDB.QueryRow(query, i.userId, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType).Scan(&createdItemId)
+	if err != nil {
+		return item{}, err
+	}
+	i.Id = createdItemId
+	return i, nil
 }
 
-func repoDestroyItem(id int) error {
-	for i, item := range items {
-		if item.Id == id {
-			items = append(items[:i], items[i+1:]...)
-			return nil
-		}
+func (hsdb *HappyStackDatabase) updateItem(i item) (item, error) {
+	query := `
+	UPDATE items
+	SET name = $2
+	WHERE item_id = $1;`
+	res, err := hsdb.sqlDB.Exec(query, i.Id, i.Name)
+	if err != nil {
+		return item{Name: "error"}, err
 	}
-	return fmt.Errorf("Could not find Todo with id of %d to delete", id)
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+	if count == 0 {
+		fmt.Println(err)
+	}
+
+	return i, nil
+}
+
+func (hsdb *HappyStackDatabase) destroyItem(id int) error {
+	query := `DELETE FROM items WHERE "item_id"=$1;`
+	_, err := hsdb.sqlDB.Exec(query, id)
+	return err
 }

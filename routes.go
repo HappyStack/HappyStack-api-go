@@ -17,25 +17,31 @@ var routes = Routes{
 	Route{
 		"ItemsIndex",
 		"GET",
-		"/items",
+		"/users/{userId}/items",
 		list,
 	},
 	Route{
 		"ItemsCreate",
 		"POST",
-		"/items",
+		"/users/{userId}/items",
 		itemsCreate,
+	},
+	Route{
+		"ItemsUpdate",
+		"PUT",
+		"/users/{userId}/items/{itemId}",
+		itemsUpdate,
 	},
 	Route{
 		"ItemsShow",
 		"GET",
-		"/items/{itemId}",
+		"/users/{userId}/items/{itemId}",
 		show,
 	},
 	Route{
 		"ItemsDelete",
 		"DELETE",
-		"/items/{itemId}",
+		"/users/{userId}/items/{itemId}",
 		delete,
 	},
 	Route{

@@ -103,6 +103,7 @@ func itemsUpdate(w http.ResponseWriter, r *http.Request) {
 
 	newItem, err := happyStackDatabase.updateItem(item)
 	if err != nil {
+		log.Printf("Error signing the token %v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err)
 		return
@@ -137,6 +138,12 @@ func delete(w http.ResponseWriter, r *http.Request) {
 func itemIDForRequest(r *http.Request) (int, error) {
 	itemIDString := mux.Vars(r)["itemId"]
 	return strconv.Atoi(itemIDString)
+}
+
+// Signup
+
+func signupHandler(w http.ResponseWriter, r *http.Request) {
+
 }
 
 // Login

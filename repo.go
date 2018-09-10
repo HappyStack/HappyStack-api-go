@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 
 	_ "github.com/lib/pq"
 )
@@ -99,11 +100,45 @@ func (hsdb *HappyStackDatabase) createItem(i item) (item, error) {
 }
 
 func (hsdb *HappyStackDatabase) updateItem(i item) (item, error) {
+
+	args := []interface{}{i.Id}
+	argIndex := 2
+
 	query := `
 	UPDATE items
-	SET name = $2
-	WHERE item_id = $1;`
-	res, err := hsdb.sqlDB.Exec(query, i.Id, i.Name)
+	SET `
+	if i.Name != "" {
+		log.Printf("i.name is: %v\n", i.Name)
+		query += `name = $` + strconv.Itoa(argIndex)
+		args = append(args, i.Name)
+		argIndex += 1
+	}
+	if i.Dosage != "" {
+		if argIndex > 2 {
+			query += `, `
+		}
+		query += `dosage = $` + strconv.Itoa(argIndex)
+		args = append(args, i.Dosage)
+		argIndex += 1
+	}
+	query += ` WHERE item_id = $1;`
+	//Timing      time.Time   `json:"timing"`
+
+	res, err := hsdb.sqlDB.Exec(query, args...)
+	// res, err := hsdb.sqlDB.Exec(query, i.Id, i.Name)
+
+	// query := `
+	// UPDATE items
+	// SET name = $2,
+	// dosage = $3,
+	// taken_today = $4,
+	// serving_size = $5,
+	// serving_type = $6
+	// WHERE item_id = $1;`
+	// //Timing      time.Time   `json:"timing"`
+
+	// res, err := hsdb.sqlDB.Exec(query, i.Id, i.Name, i.Dosage, i.TakenToday, i.ServingSize, i.ServingType)
+
 	if err != nil {
 		return item{Name: "error"}, err
 	}

@@ -7,24 +7,32 @@ import (
 	"net/http"
 )
 
+var happyStackDatabase *HappyStackDatabase
+
 func main() {
 	initKeys()
+
+	happyStackDatabase = NewHappyStackDatabase()
+	defer happyStackDatabase.closeDatabase()
+
+	fmt.Println(SignKey)
+	fmt.Println(VerifyKey)
+
 	router := NewRouter()
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func initKeys() {
-	SignKey, err := ioutil.ReadFile(privateKeyPath)
+	sKey, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
 		log.Fatal("Error reading private key")
 		return
 	}
-	VerifyKey, err := ioutil.ReadFile(publicKeyPath)
+	SignKey = sKey
+	vKey, err := ioutil.ReadFile(publicKeyPath)
 	if err != nil {
 		log.Fatal("Error reading public key")
 		return
 	}
-
-	fmt.Println(SignKey)
-	fmt.Println(VerifyKey)
+	VerifyKey = vKey
 }

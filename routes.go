@@ -35,7 +35,7 @@ var routes = Routes{
 	Route{
 		"ItemsShow",
 		"GET",
-		"/items/{itemId}",
+		"/users/{userId}/items/{itemId}",
 		show,
 	},
 	Route{

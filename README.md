@@ -54,3 +54,18 @@ go run main.go item.go handlers.go routes.go logger.go router.go repo.go auth.go
 ```
 GOOS=linux GOARCH=amd64 go build
 ```
+
+
+## Connect to the remote Database with Postico (Postgres SQL Client)
+In [Postico](https://eggerapps.at/postico/) add a `New 
+Favorite`(connexion)
+
+**Nickname**: `HappyStackServer` for example  
+**Host**: `[leave blank]` (localhost by default)  
+**User**: `happystack`  
+**Password**: `[Use database password]`  
+**Database**: `happystack`  
+Click `Option` the choose `Connect via SSH`  
+**SSH Host**: `104.248.56.250`
+**User**: `happystack`  
+**Private key** `[Select your private key that is authorized on the server]`

@@ -45,6 +45,12 @@ var routes = Routes{
 		delete,
 	},
 	Route{
+		"Signup",
+		"POST",
+		"/signup",
+		signupHandler,
+	},
+	Route{
 		"Login",
 		"POST",
 		"/login",

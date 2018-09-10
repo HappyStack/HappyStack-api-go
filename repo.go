@@ -124,3 +124,33 @@ func (hsdb *HappyStackDatabase) destroyItem(id int) error {
 	_, err := hsdb.sqlDB.Exec(query, id)
 	return err
 }
+
+func (hsdb *HappyStackDatabase) passwordForUserEmail(email string) (string, error) {
+	// Look for username in the database.
+	query := `SELECT * FROM users WHERE "email"=$1;`
+	var userId int
+	var userEmail string
+	var userPassword string
+	row := hsdb.sqlDB.QueryRow(query, email)
+	switch err := row.Scan(&userId, &userEmail, &userPassword); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+		return "", &myError{message: "No rows were returned!"}
+	case nil:
+		fmt.Println(userId, userEmail, userPassword)
+		return userPassword, nil
+	default:
+		panic(err)
+		return "", err
+	}
+}
+
+
+
+type myError struct {
+    message string
+}
+func (e *myError) Error() string {
+    return fmt.Sprintf("%v", e.message)
+}
+

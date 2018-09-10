@@ -152,8 +152,15 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(user.Username, user.Password)
 
+	password, err := happyStackDatabase.passwordForUserEmail(user.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "Error in request")
+		return
+	}
+
 	// Here validate those are valid credentials.
-	wrongCredentials := (user.Username != "admin") || (user.Password != "1234")
+	wrongCredentials := (user.Password != password)
 	if wrongCredentials {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprintf(w, "Wrong credentials")

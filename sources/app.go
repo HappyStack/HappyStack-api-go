@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -82,46 +80,28 @@ func (app *App) itemsCreate(res Response, req Request) {
 }
 
 // Update
-func (app *App) itemsUpdate(w http.ResponseWriter, r *http.Request) {
+func (app *App) itemsUpdate(res Response, req Request) {
 
-	// token, err := jwt.ParseFromRequest(req, func(token *jwt.Token)
-	// log.Printf("Error signing the token %v\n", token)
+	// Parse item.
+	item, err := req.item()
+	if err != nil {
+		res.setStatusUnprocessableEntity()
+		res.sendError(err)
+		return
+	}
 
 	// TODO: Check this belongs to the currently connected user.
-	itemIDToShow, _ := app.router.itemIDForRequest(r)
-
-	// Parse the body and use LimitReader to prevent from attacks (big requests).
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
-
-	var item item
-	// Try to parse the JSON body into an item.
-	if err := json.Unmarshal(body, &item); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-	item.Id = itemIDToShow
+	itemID, _ := app.router.itemIDForRequest(req)
+	item.Id = itemID
 
 	newItem, err := app.database.update(item)
 	if err != nil {
-		log.Printf("Error signing the token %v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err)
+		//TO SET STATUS code?
+		res.sendError(err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(newItem); err != nil {
-		panic(err)
-	}
+	res.setStatusOK()
+	res.send(newItem)
 }
 
 //Show
@@ -144,7 +124,7 @@ func (app *App) delete(res Response, req Request) {
 
 // Signup
 
-func (app *App) signupHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) signupHandler(res Response, req Request) {
 
 }
 

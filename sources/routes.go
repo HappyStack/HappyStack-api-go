@@ -37,12 +37,12 @@ func (app *App) routes() Routes {
 			"/users/{userId}/items",
 			app.itemsCreate,
 		},
-		// Route{
-		// 	"ItemsUpdate",
-		// 	"PUT",
-		// 	"/users/{userId}/items/{itemId}",
-		// 	app.itemsUpdate,
-		// },
+		Route{
+			"ItemsUpdate",
+			"PUT",
+			"/users/{userId}/items/{itemId}",
+			app.itemsUpdate,
+		},
 		Route{
 			"ItemsShow",
 			"GET",
@@ -55,12 +55,12 @@ func (app *App) routes() Routes {
 			"/users/{userId}/items/{itemId}",
 			app.delete,
 		},
-		// Route{
-		// 	"Signup",
-		// 	"POST",
-		// 	"/signup",
-		// 	app.signupHandler,
-		// },
+		Route{
+			"Signup",
+			"POST",
+			"/signup",
+			app.signupHandler,
+		},
 		// Route{
 		// 	"Login",
 		// 	"POST",

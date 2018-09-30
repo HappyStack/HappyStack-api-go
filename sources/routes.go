@@ -31,12 +31,12 @@ func (app *App) routes() Routes {
 			"/users/{userId}/items",
 			app.list,
 		},
-		// Route{
-		// 	"ItemsCreate",
-		// 	"POST",
-		// 	"/users/{userId}/items",
-		// 	app.itemsCreate,
-		// },
+		Route{
+			"ItemsCreate",
+			"POST",
+			"/users/{userId}/items",
+			app.itemsCreate,
+		},
 		// Route{
 		// 	"ItemsUpdate",
 		// 	"PUT",

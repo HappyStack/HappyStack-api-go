@@ -37,12 +37,15 @@ func (app *App) run() {
 type Response interface {
 	setContentType()
 	setStatusOK()
+	setStatusCreated()
+	setStatusUnprocessableEntity()
 	send(stuff interface{})
+	sendError(error)
 	sendEmpty()
 }
 
 type Request interface {
-	// userID() (int, error)
+	item() (item, error)
 }
 
 //List
@@ -55,42 +58,27 @@ func (app *App) list(res Response, req Request) {
 }
 
 // Create
-func (app *App) itemsCreate(w http.ResponseWriter, r *http.Request) {
-
-	userIDToShow, _ := app.router.userIDForRequest(r)
-
-	var item item
-
-	// Parse the body and use LimitReader to prevent from attacks (big requests).
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+func (app *App) itemsCreate(res Response, req Request) {
+	item, err := req.item()
 	if err != nil {
-		panic(err)
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
-
-	// Try to parse the JSON body into an item.
-	if err := json.Unmarshal(body, &item); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-
-	item.userId = userIDToShow
-	newItem, err := app.database.create(item)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err)
+		res.setStatusUnprocessableEntity()
+		res.sendError(err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(newItem); err != nil {
-		panic(err)
+
+	userID, err := app.router.userIDForRequest(req)
+	if err != nil {
+		res.sendError(err)
+		return
 	}
+	item.userId = userID
+	newItem, err := app.database.create(item)
+	if err != nil {
+		res.sendError(err)
+		return
+	}
+	res.setStatusCreated()
+	res.send(newItem)
 }
 
 // Update
@@ -141,12 +129,6 @@ func (app *App) show(res Response, req Request) {
 	itemID, _ := app.router.itemIDForRequest(req)
 	item := app.database.read(itemID)
 	res.send(item)
-}
-
-func (app *App) oldShow(w http.ResponseWriter, r *http.Request) {
-	itemIDToShow, _ := app.router.itemIDForRequest(r)
-	itemToShow := app.database.read(itemIDToShow)
-	json.NewEncoder(w).Encode(itemToShow)
 }
 
 // Delete

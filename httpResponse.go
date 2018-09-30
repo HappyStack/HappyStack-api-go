@@ -20,38 +20,30 @@ func (r HttpResponse) setStatus(s ResponseStatus) {
 }
 
 func httpStatusForResponseStatus(s ResponseStatus) int {
-	if s == OK {
+	switch s {
+	case OK:
+		return http.StatusOK
+	case Created:
+		return http.StatusCreated
+	case NoContent:
+		return http.StatusNoContent
+	case BadRequest:
+		return http.StatusBadRequest
+	case Unauthorized:
+		return http.StatusUnauthorized
+	case Forbidden:
+		return http.StatusForbidden
+	case NotFound:
+		return http.StatusNotFound
+	case UnprocessableEntity:
+		return http.StatusUnprocessableEntity
+	case InternalServerError:
+		return http.StatusInternalServerError
+	case NotImplemented:
+		return http.StatusNotImplemented
+	default:
 		return http.StatusOK
 	}
-	if s == Created {
-		return http.StatusCreated
-	}
-	if s == NoContent {
-		return http.StatusNoContent
-	}
-	if s == BadRequest {
-		return http.StatusBadRequest
-	}
-	if s == Unauthorized {
-		return http.StatusUnauthorized
-	}
-	if s == Forbidden {
-		return http.StatusForbidden
-	}
-	if s == NotFound {
-		return http.StatusNotFound
-	}
-	if s == UnprocessableEntity {
-		return http.StatusUnprocessableEntity
-	}
-	if s == InternalServerError {
-		return http.StatusInternalServerError
-	}
-	if s == NotImplemented {
-		return http.StatusNotImplemented
-	}
-
-	return http.StatusOK
 }
 
 func (r HttpResponse) setStatusForbidden() {

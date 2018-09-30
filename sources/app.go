@@ -7,59 +7,31 @@ import (
 	"net/http"
 	"encoding/json"
 	"io"
-	"time"
-	jwt "github.com/dgrijalva/jwt-go"
 )
-
-
-var VerifyKey, SignKey []byte
-
-type Token struct {
-	Token string `json:"token"`
-}
 
 type UserCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-const (
-	privateKeyPath = "../keys/app.rsa"
-	publicKeyPath  = "../keys/app.rsa.pub"
-)
+type AuthService interface {
+	init()
+	tokenFor(user UserCredentials) (Token, error) 
+}
 
 /* App Code */
 type App struct {
 	database Database
 	router Router
 	encryptionService EncryptionService
+	authService AuthService
  }
 
 func (app *App)run() {
-
-	initKeys() 
-	fmt.Println(SignKey)
-	fmt.Println(VerifyKey)
-
+	app.authService.init()
 	app.router.registerRoutes(app.routes())
 	log.Fatal(app.router.start())
-
 	defer app.database.close()
-}
-
-func initKeys() {
-	sKey, err := ioutil.ReadFile(privateKeyPath)
-	if err != nil {
-		log.Fatal("Error reading private key")
-		return
-	}
-	SignKey = sKey
-	vKey, err := ioutil.ReadFile(publicKeyPath)
-	if err != nil {
-		log.Fatal("Error reading public key")
-		return
-	}
-	VerifyKey = vKey
 }
 
 //List
@@ -214,20 +186,12 @@ func (app *App)loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If so then generate auth token.
-	signer := jwt.New(jwt.SigningMethodHS256)
-
-	claims := make(jwt.MapClaims)
-	claims["usename"] = user.Username
-	claims["exp"] = time.Now().Add(time.Minute * 20).Unix()
-	signer.Claims = claims
-	tokenString, err := signer.SignedString(SignKey)
-
+	token, err := app.authService.tokenFor(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(w, "Error while signing the token")
 		log.Printf("Error signing the token %v\n", err)
 	}
-
-	token := Token{Token: tokenString}
+	
 	json.NewEncoder(w).Encode(token)
 }

@@ -5,6 +5,7 @@ func main() {
 				database: NewPostGreSQLDatabase(),
 				router: NewMuxRouter(),
 				encryptionService: NewBCryptEncryptionService(),
+				authService: NewJWTAuthService(),
 			}
 	app.run()
 }

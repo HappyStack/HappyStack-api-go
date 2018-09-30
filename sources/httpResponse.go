@@ -15,15 +15,45 @@ type HttpResponse struct {
 func (r HttpResponse) setContentType() {
 	r.httpr.Header().Set("Content-Type", "application/json; charset=UTF-8")
 }
-func (r HttpResponse) setStatusOK() {
-	r.httpr.WriteHeader(http.StatusOK)
-}
-func (r HttpResponse) setStatusCreated() {
-	r.httpr.WriteHeader(http.StatusCreated)
+
+func (r HttpResponse) setStatus(s ResponseStatus) {
+	httpStatus := httpStatusForResponseStatus(s)
+	r.httpr.WriteHeader(httpStatus)
 }
 
-func (r HttpResponse) setStatusUnprocessableEntity() {
-	r.httpr.WriteHeader(http.StatusUnprocessableEntity)
+func httpStatusForResponseStatus(s ResponseStatus) int {
+	if s == OK {
+		return http.StatusOK
+	}
+	if s == Created {
+		return http.StatusCreated
+	}
+	if s == NoContent {
+		return http.StatusNoContent
+	}
+	if s == BadRequest {
+		return http.StatusBadRequest
+	}
+	if s == Unauthorized {
+		return http.StatusUnauthorized
+	}
+	if s == Forbidden {
+		return http.StatusForbidden
+	}
+	if s == NotFound {
+		return http.StatusNotFound
+	}
+	if s == UnprocessableEntity {
+		return http.StatusUnprocessableEntity
+	}
+	if s == InternalServerError {
+		return http.StatusInternalServerError
+	}
+	if s == NotImplemented {
+		return http.StatusNotImplemented
+	}
+
+	return http.StatusOK
 }
 
 func (r HttpResponse) setStatusForbidden() {
@@ -34,19 +64,19 @@ func (r HttpResponse) setStatusBadRequest() {
 	r.httpr.WriteHeader(http.StatusBadRequest)
 }
 
-func (r HttpResponse) send(stuff interface{}) {
-	r.setContentType()
-	if err := json.NewEncoder(r.httpr).Encode(stuff); err != nil {
-		panic(err)
+func (r HttpResponse) send(stuff interface{}, s ResponseStatus) {
+	r.setStatus(s)
+	if s != NoContent {
+		r.setContentType()
+		if err := json.NewEncoder(r.httpr).Encode(stuff); err != nil {
+			panic(err)
+		}
 	}
 }
 
-func (r HttpResponse) sendEmpty() {
-	r.httpr.WriteHeader(http.StatusNoContent)
-}
-
-func (r HttpResponse) sendError(e error) {
+func (r HttpResponse) sendError(e error, s ResponseStatus) {
 	r.setContentType()
+	r.setStatus(s)
 	if err := json.NewEncoder(r.httpr).Encode(e); err != nil {
 		panic(err)
 	}

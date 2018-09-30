@@ -30,18 +30,6 @@ func (app *App) run() {
 	defer app.database.close()
 }
 
-type Response interface {
-	setContentType()
-	setStatusOK()
-	setStatusCreated()
-	setStatusUnprocessableEntity()
-	setStatusForbidden()
-	setStatusBadRequest()
-	send(stuff interface{})
-	sendError(error)
-	sendEmpty()
-}
-
 type Request interface {
 	item() (item, error)
 	userCredentials() (UserCredentials, error)
@@ -50,36 +38,30 @@ type Request interface {
 //List
 func (app *App) list(res Response, req Request) {
 	userIDToShow, _ := app.router.userIDForRequest(req)
-	res.setContentType()
-	res.setStatusOK()
 	dbItems := app.database.itemsFor(userIDToShow)
-	res.send(dbItems)
+	res.send(dbItems, OK)
 }
 
 // Create
 func (app *App) itemsCreate(res Response, req Request) {
 	item, err := req.item()
 	if err != nil {
-		res.setStatusUnprocessableEntity()
-		res.sendError(err)
+		res.sendError(err, UnprocessableEntity)
 		return
 	}
 
 	userID, err := app.router.userIDForRequest(req)
 	if err != nil {
-		res.setStatusBadRequest()
-		res.sendError(err)
+		res.sendError(err, BadRequest)
 		return
 	}
 	item.userId = userID
 	newItem, err := app.database.create(item)
 	if err != nil {
-		res.setStatusBadRequest()
-		res.sendError(err)
+		res.sendError(err, BadRequest)
 		return
 	}
-	res.setStatusCreated()
-	res.send(newItem)
+	res.send(newItem, Created)
 }
 
 // Update
@@ -89,29 +71,26 @@ func (app *App) itemsUpdate(res Response, req Request) {
 	// Parse item.
 	item, err := req.item()
 	if err != nil {
-		res.setStatusUnprocessableEntity()
-		res.sendError(err)
+		res.sendError(err, UnprocessableEntity)
 		return
 	}
 	itemID, _ := app.router.itemIDForRequest(req)
 	item.Id = itemID
 
 	// Create it
-	newItem, err := app.database.update(item)
+	updatedItem, err := app.database.update(item)
 	if err != nil {
-		res.setStatusBadRequest()
-		res.sendError(err)
+		res.sendError(err, BadRequest)
 		return
 	}
-	res.setStatusOK()
-	res.send(newItem)
+	res.send(updatedItem, OK)
 }
 
 //Show
 func (app *App) show(res Response, req Request) {
 	itemID, _ := app.router.itemIDForRequest(req)
 	item := app.database.read(itemID)
-	res.send(item)
+	res.send(item, OK)
 }
 
 // Delete
@@ -119,9 +98,9 @@ func (app *App) delete(res Response, req Request) {
 	itemID, _ := app.router.itemIDForRequest(req)
 	err := app.database.delete(itemID)
 	if err != nil {
-		res.send("DOES NOT EXIST")
+		res.send("DOES NOT EXIST", NotFound)
 	} else {
-		res.sendEmpty()
+		res.send("", NoContent)
 	}
 }
 
@@ -138,8 +117,7 @@ func (app *App) loginHandler(res Response, req Request) {
 	// Parse credentials.
 	user, err := req.userCredentials()
 	if err != nil {
-		res.setStatusUnprocessableEntity()
-		res.sendError(err)
+		res.sendError(err, UnprocessableEntity)
 		return
 	}
 
@@ -147,28 +125,23 @@ func (app *App) loginHandler(res Response, req Request) {
 
 	password, err := app.database.passwordForUserEmail(user.Username)
 	if err != nil {
-		res.setStatusBadRequest()
-		res.sendError(err)
+		res.sendError(err, BadRequest)
 		return
 	}
 
 	// Here validate those are valid credentials.
 	if !app.encryptionService.comparePasswords(password, user.Password) {
-		res.setStatusForbidden()
-		res.send("Wrong credentials")
+		res.send("Wrong credentials", Forbidden)
 		return
 	}
 
 	// If so then generate auth token.
 	token, err := app.authService.tokenFor(user)
 	if err != nil {
-		res.setStatusBadRequest()
-		res.sendError(err)
+		res.sendError(err, BadRequest)
 		// w.WriteHeader(http.StatusInternalServerError)
 		// fmt.Fprintln(w, "Error while signing the token")
 		// log.Printf("Error signing the token %v\n", err)
 	}
-
-	res.setStatusOK()
-	res.send(token)
+	res.send(token, OK)
 }

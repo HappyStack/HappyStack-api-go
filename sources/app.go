@@ -1,12 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"encoding/json"
-	"io"
 )
 
 type UserCredentials struct {
@@ -16,42 +16,46 @@ type UserCredentials struct {
 
 type AuthService interface {
 	init()
-	tokenFor(user UserCredentials) (Token, error) 
+	tokenFor(user UserCredentials) (Token, error)
 }
 
 /* App Code */
 type App struct {
-	database Database
-	router Router
+	database          Database
+	router            Router
 	encryptionService EncryptionService
-	authService AuthService
- }
+	authService       AuthService
+}
 
-func (app *App)run() {
+func (app *App) run() {
 	app.authService.init()
 	app.router.registerRoutes(app.routes())
 	log.Fatal(app.router.start())
 	defer app.database.close()
 }
 
+type Response interface {
+	setContentType()
+	setStatusOK()
+	send(stuff interface{})
+	sendEmpty()
+}
+
+type Request interface {
+	// userID() (int, error)
+}
+
 //List
-func (app *App)list(w http.ResponseWriter, r *http.Request) {
-	userIDToShow, _ := app.router.userIDForRequest(r)
-
-	// Tell the client to expect json
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	// Explicitely set status code
-	w.WriteHeader(http.StatusOK)
+func (app *App) list(res Response, req Request) {
+	userIDToShow, _ := app.router.userIDForRequest(req)
+	res.setContentType()
+	res.setStatusOK()
 	dbItems := app.database.itemsFor(userIDToShow)
-
-	if err := json.NewEncoder(w).Encode(dbItems); err != nil {
-		panic(err)
-	}
+	res.send(dbItems)
 }
 
 // Create
-func (app *App)itemsCreate(w http.ResponseWriter, r *http.Request) {
+func (app *App) itemsCreate(w http.ResponseWriter, r *http.Request) {
 
 	userIDToShow, _ := app.router.userIDForRequest(r)
 
@@ -90,9 +94,9 @@ func (app *App)itemsCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update
-func (app *App)itemsUpdate(w http.ResponseWriter, r *http.Request) {
+func (app *App) itemsUpdate(w http.ResponseWriter, r *http.Request) {
 
-	// token, err := jwt.ParseFromRequest(req, func(token *jwt.Token) 
+	// token, err := jwt.ParseFromRequest(req, func(token *jwt.Token)
 	// log.Printf("Error signing the token %v\n", token)
 
 	// TODO: Check this belongs to the currently connected user.
@@ -133,33 +137,38 @@ func (app *App)itemsUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 //Show
-func (app *App)show(w http.ResponseWriter, r *http.Request) {
+func (app *App) show(res Response, req Request) {
+	itemID, _ := app.router.itemIDForRequest(req)
+	item := app.database.read(itemID)
+	res.send(item)
+}
+
+func (app *App) oldShow(w http.ResponseWriter, r *http.Request) {
 	itemIDToShow, _ := app.router.itemIDForRequest(r)
 	itemToShow := app.database.read(itemIDToShow)
 	json.NewEncoder(w).Encode(itemToShow)
 }
 
 // Delete
-func (app *App)delete(w http.ResponseWriter, r *http.Request) {
-	// Todo make sure this is the logged in user that deletes
-	// his own item.
-	//userID, _ := userIDForRequest(r)
-	itemIDToDelete, _ := app.router.itemIDForRequest(r)
-
-	if app.database.delete(itemIDToDelete) != nil {
-		json.NewEncoder(w).Encode("DOES NOT EXIST")
+func (app *App) delete(res Response, req Request) {
+	itemID, _ := app.router.itemIDForRequest(req)
+	err := app.database.delete(itemID)
+	if err != nil {
+		res.send("DOES NOT EXIST")
+	} else {
+		res.sendEmpty()
 	}
 }
 
 // Signup
 
-func (app *App)signupHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) signupHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
 // Login
 
-func (app *App)loginHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 	var user UserCredentials
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -178,7 +187,7 @@ func (app *App)loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Here validate those are valid credentials.
-	
+
 	if !app.encryptionService.comparePasswords(password, user.Password) {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprintf(w, "Wrong credentials")
@@ -192,6 +201,6 @@ func (app *App)loginHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Error while signing the token")
 		log.Printf("Error signing the token %v\n", err)
 	}
-	
+
 	json.NewEncoder(w).Encode(token)
 }

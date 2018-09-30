@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 )
 
 type UserCredentials struct {
@@ -37,6 +35,8 @@ type Response interface {
 	setStatusOK()
 	setStatusCreated()
 	setStatusUnprocessableEntity()
+	setStatusForbidden()
+	setStatusBadRequest()
 	send(stuff interface{})
 	sendError(error)
 	sendEmpty()
@@ -44,6 +44,7 @@ type Response interface {
 
 type Request interface {
 	item() (item, error)
+	userCredentials() (UserCredentials, error)
 }
 
 //List
@@ -66,12 +67,14 @@ func (app *App) itemsCreate(res Response, req Request) {
 
 	userID, err := app.router.userIDForRequest(req)
 	if err != nil {
+		res.setStatusBadRequest()
 		res.sendError(err)
 		return
 	}
 	item.userId = userID
 	newItem, err := app.database.create(item)
 	if err != nil {
+		res.setStatusBadRequest()
 		res.sendError(err)
 		return
 	}
@@ -81,6 +84,7 @@ func (app *App) itemsCreate(res Response, req Request) {
 
 // Update
 func (app *App) itemsUpdate(res Response, req Request) {
+	// TODO: Auth Check this belongs to the currently connected user.
 
 	// Parse item.
 	item, err := req.item()
@@ -89,14 +93,13 @@ func (app *App) itemsUpdate(res Response, req Request) {
 		res.sendError(err)
 		return
 	}
-
-	// TODO: Check this belongs to the currently connected user.
 	itemID, _ := app.router.itemIDForRequest(req)
 	item.Id = itemID
 
+	// Create it
 	newItem, err := app.database.update(item)
 	if err != nil {
-		//TO SET STATUS code?
+		res.setStatusBadRequest()
 		res.sendError(err)
 		return
 	}
@@ -130,12 +133,13 @@ func (app *App) signupHandler(res Response, req Request) {
 
 // Login
 
-func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
-	var user UserCredentials
-	err := json.NewDecoder(r.Body).Decode(&user)
+func (app *App) loginHandler(res Response, req Request) {
+
+	// Parse credentials.
+	user, err := req.userCredentials()
 	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "Error in request")
+		res.setStatusUnprocessableEntity()
+		res.sendError(err)
 		return
 	}
 
@@ -143,26 +147,28 @@ func (app *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	password, err := app.database.passwordForUserEmail(user.Username)
 	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "Error in request")
+		res.setStatusBadRequest()
+		res.sendError(err)
 		return
 	}
 
 	// Here validate those are valid credentials.
-
 	if !app.encryptionService.comparePasswords(password, user.Password) {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "Wrong credentials")
+		res.setStatusForbidden()
+		res.send("Wrong credentials")
 		return
 	}
 
 	// If so then generate auth token.
 	token, err := app.authService.tokenFor(user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Error while signing the token")
-		log.Printf("Error signing the token %v\n", err)
+		res.setStatusBadRequest()
+		res.sendError(err)
+		// w.WriteHeader(http.StatusInternalServerError)
+		// fmt.Fprintln(w, "Error while signing the token")
+		// log.Printf("Error signing the token %v\n", err)
 	}
 
-	json.NewEncoder(w).Encode(token)
+	res.setStatusOK()
+	res.send(token)
 }

@@ -26,6 +26,14 @@ func (r HttpResponse) setStatusUnprocessableEntity() {
 	r.httpr.WriteHeader(http.StatusUnprocessableEntity)
 }
 
+func (r HttpResponse) setStatusForbidden() {
+	r.httpr.WriteHeader(http.StatusForbidden)
+}
+
+func (r HttpResponse) setStatusBadRequest() {
+	r.httpr.WriteHeader(http.StatusBadRequest)
+}
+
 func (r HttpResponse) send(stuff interface{}) {
 	r.setContentType()
 	if err := json.NewEncoder(r.httpr).Encode(stuff); err != nil {
@@ -39,7 +47,6 @@ func (r HttpResponse) sendEmpty() {
 
 func (r HttpResponse) sendError(e error) {
 	r.setContentType()
-	r.httpr.WriteHeader(http.StatusBadRequest)
 	if err := json.NewEncoder(r.httpr).Encode(e); err != nil {
 		panic(err)
 	}
@@ -63,4 +70,10 @@ func (r HttpRequest) item() (item, error) {
 	var item item
 	err = json.Unmarshal(body, &item)
 	return item, err
+}
+
+func (r HttpRequest) userCredentials() (UserCredentials, error) {
+	var user UserCredentials
+	err := json.NewDecoder(r.httpr.Body).Decode(&user)
+	return user, err
 }

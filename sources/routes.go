@@ -61,11 +61,11 @@ func (app *App) routes() Routes {
 			"/signup",
 			app.signupHandler,
 		},
-		// Route{
-		// 	"Login",
-		// 	"POST",
-		// 	"/login",
-		// 	app.loginHandler,
-		// },
+		Route{
+			"Login",
+			"POST",
+			"/login",
+			app.loginHandler,
+		},
 	}
 }

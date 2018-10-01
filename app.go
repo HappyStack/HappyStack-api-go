@@ -69,7 +69,11 @@ func (app *App) itemsCreate(res Response, req Request) {
 
 // Update
 func (app *App) itemsUpdate(res Response, req Request) {
-	// TODO: Auth Check this belongs to the currently connected user.
+
+	if !app.authService.hasAuthorization(req) {
+		res.send("Needs authentication", Forbidden)
+		return
+	}
 
 	// Parse item.
 	item, err := req.item()
@@ -80,7 +84,19 @@ func (app *App) itemsUpdate(res Response, req Request) {
 	itemID, _ := app.router.itemIDForRequest(req)
 	item.Id = itemID
 
-	// Create it
+	// Fetch item from Database to see correponding user_id.
+	// the one in the request could be a fake one !
+	dbitem, err := app.database.read(itemID)
+	if err != nil {
+		res.sendError(err, NotFound)
+	}
+
+	if !app.authService.isAuthorizedForUserId(dbitem.userId, req) {
+		res.send("invalid token", Forbidden)
+		return
+	}
+
+	// Update it
 	updatedItem, err := app.database.update(item)
 	if err != nil {
 		res.sendError(err, BadRequest)

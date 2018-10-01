@@ -35,6 +35,12 @@ func (app *App) list(res Response, req Request) {
 
 // Create
 func (app *App) itemsCreate(res Response, req Request) {
+
+	if !app.authService.hasAuthorization(req) {
+		res.send("Needs authentication", Forbidden)
+		return
+	}
+
 	item, err := req.item()
 	if err != nil {
 		res.sendError(err, UnprocessableEntity)
@@ -46,6 +52,12 @@ func (app *App) itemsCreate(res Response, req Request) {
 		res.sendError(err, BadRequest)
 		return
 	}
+
+	if !app.authService.isAuthorizedForUserId(userID, req) {
+		res.send("invalid token", Forbidden)
+		return
+	}
+
 	item.userId = userID
 	newItem, err := app.database.create(item)
 	if err != nil {

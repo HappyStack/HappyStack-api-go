@@ -46,14 +46,6 @@ func httpStatusForResponseStatus(s ResponseStatus) int {
 	}
 }
 
-func (r HttpResponse) setStatusForbidden() {
-	r.httpr.WriteHeader(http.StatusForbidden)
-}
-
-func (r HttpResponse) setStatusBadRequest() {
-	r.httpr.WriteHeader(http.StatusBadRequest)
-}
-
 func (r HttpResponse) send(stuff interface{}, s ResponseStatus) {
 	r.setContentType()
 	r.setStatus(s)

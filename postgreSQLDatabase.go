@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -17,8 +18,6 @@ const (
 )
 
 var currentId int
-
-var items Items
 
 type PostGreSQLDatabase struct {
 	sqlDB *sql.DB
@@ -68,14 +67,40 @@ func (hsdb *PostGreSQLDatabase) itemsFor(userId int) []item {
 	return dbItems
 }
 
-func (hsdb *PostGreSQLDatabase) read(id int) item {
-	for _, i := range items {
-		if i.Id == id {
-			return i
-		}
+func (hsdb *PostGreSQLDatabase) read(id int) (item, error) {
+
+	// Look for item in the database.
+	query := `SELECT * FROM items WHERE "item_id"=$1;`
+
+	var itemID int
+	var itemUserID int
+	var itemName string
+	var itemDosage string
+	var itemTakenToday bool
+	var itemServingSize int
+	var itemServingType servingType
+	var itemTiming time.Time
+
+	row := hsdb.sqlDB.QueryRow(query, id)
+	var item item
+	switch err := row.Scan(&itemID, &itemUserID, &itemName, &itemDosage, &itemTakenToday, &itemServingSize, &itemServingType, &itemTiming); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+		return item, &myError{message: "No rows were returned!"}
+	case nil:
+		item.Id = itemID
+		item.userId = itemUserID
+		item.Name = itemName
+		item.Dosage = itemDosage
+		item.TakenToday = itemTakenToday
+		item.ServingSize = itemServingSize
+		item.ServingType = itemServingType
+		// item.Timing = itemTiming
+		return item, nil
+	default:
+		panic(err)
+		return item, err
 	}
-	// return empty item if not found
-	return item{}
 }
 
 func (hsdb *PostGreSQLDatabase) create(i item) (item, error) {

@@ -80,14 +80,34 @@ func (app *App) itemsUpdate(res Response, req Request) {
 //Show
 func (app *App) show(res Response, req Request) {
 	itemID, _ := app.router.itemIDForRequest(req)
-	item := app.database.read(itemID)
+	item, err := app.database.read(itemID)
+	if err != nil {
+		res.sendError(err, NotFound)
+	}
 	res.send(item, OK)
 }
 
 // Delete
 func (app *App) delete(res Response, req Request) {
+
+	if !app.authService.hasAuthorization(req) {
+		res.send("Needs authentication", Forbidden)
+		return
+	}
+
 	itemID, _ := app.router.itemIDForRequest(req)
-	err := app.database.delete(itemID)
+	item, err := app.database.read(itemID)
+	if err != nil {
+		res.sendError(err, NotFound)
+	}
+	itemBelongsToUserID := item.userId
+
+	if !app.authService.isAuthorizedForUserId(itemBelongsToUserID, req) {
+		res.send("invalid token", Forbidden)
+		return
+	}
+
+	err = app.database.delete(itemID)
 	if err != nil {
 		res.send("DOES NOT EXIST", NotFound)
 	} else {

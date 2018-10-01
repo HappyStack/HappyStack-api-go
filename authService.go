@@ -2,7 +2,7 @@ package main
 
 type AuthService interface {
 	init()
-	tokenFor(user UserCredentials) (Token, error)
+	tokenFor(user User) (Token, error)
 }
 
 type Token struct {

@@ -159,23 +159,27 @@ func (hsdb *PostGreSQLDatabase) delete(id int) error {
 	return err
 }
 
-func (hsdb *PostGreSQLDatabase) passwordForUserEmail(email string) (string, error) {
+func (hsdb *PostGreSQLDatabase) userMatchingEmail(email string) (User, error) {
 	// Look for username in the database.
 	query := `SELECT * FROM users WHERE "email"=$1;`
 	var userId int
 	var userEmail string
 	var userPassword string
 	row := hsdb.sqlDB.QueryRow(query, email)
+	var user User
 	switch err := row.Scan(&userId, &userEmail, &userPassword); err {
 	case sql.ErrNoRows:
 		fmt.Println("No rows were returned!")
-		return "", &myError{message: "No rows were returned!"}
+		return user, &myError{message: "No rows were returned!"}
 	case nil:
+		user.Id = userId
+		user.Username = userEmail
+		user.Password = userPassword
 		fmt.Println(userId, userEmail, userPassword)
-		return userPassword, nil
+		return user, nil
 	default:
 		panic(err)
-		return "", err
+		return user, err
 	}
 }
 

@@ -36,10 +36,11 @@ func (s *JWTAuthService) init() {
 	VerifyKey = vKey
 }
 
-func (s *JWTAuthService) tokenFor(user UserCredentials) (Token, error) {
+func (s *JWTAuthService) tokenFor(user User) (Token, error) {
 	signer := jwt.New(jwt.SigningMethodHS256)
 	claims := make(jwt.MapClaims)
 	claims["usename"] = user.Username
+	claims["userId"] = user.Id
 	claims["exp"] = time.Now().Add(time.Minute * 20).Unix()
 	signer.Claims = claims
 	tokenString, err := signer.SignedString(SignKey)

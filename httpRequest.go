@@ -27,8 +27,8 @@ func (r HttpRequest) item() (item, error) {
 	return item, err
 }
 
-func (r HttpRequest) userCredentials() (UserCredentials, error) {
-	var user UserCredentials
+func (r HttpRequest) user() (User, error) {
+	var user User
 	err := json.NewDecoder(r.httpr.Body).Decode(&user)
 	return user, err
 }

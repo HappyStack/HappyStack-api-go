@@ -6,6 +6,6 @@ type Database interface {
 	update(i item) (item, error)
 	delete(id int) error
 	itemsFor(userId int) []item
-	passwordForUserEmail(email string) (string, error)
+	userMatchingEmail(email string) (User, error)
 	close()
 }

@@ -5,7 +5,8 @@ import (
 	"log"
 )
 
-type UserCredentials struct {
+type User struct {
+	Id       int    `json:"id", db:"user_id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -105,7 +106,7 @@ func (app *App) signupHandler(res Response, req Request) {
 func (app *App) loginHandler(res Response, req Request) {
 
 	// Parse credentials.
-	user, err := req.userCredentials()
+	user, err := req.user()
 	if err != nil {
 		res.sendError(err, UnprocessableEntity)
 		return
@@ -113,20 +114,20 @@ func (app *App) loginHandler(res Response, req Request) {
 
 	fmt.Println(user.Username, user.Password)
 
-	password, err := app.database.passwordForUserEmail(user.Username)
+	dbUser, err := app.database.userMatchingEmail(user.Username)
 	if err != nil {
 		res.sendError(err, BadRequest)
 		return
 	}
 
 	// Here validate those are valid credentials.
-	if !app.encryptionService.comparePasswords(password, user.Password) {
+	if !app.encryptionService.comparePasswords(dbUser.Password, user.Password) {
 		res.send("Wrong credentials", Forbidden)
 		return
 	}
 
 	// If so then generate auth token.
-	token, err := app.authService.tokenFor(user)
+	token, err := app.authService.tokenFor(dbUser)
 	if err != nil {
 		res.sendError(err, BadRequest)
 	}

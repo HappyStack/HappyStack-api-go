@@ -1,38 +1,14 @@
 package main
 
-import (
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-)
-
-var happyStackDatabase *HappyStackDatabase
-
+// Create our app and inject our implementation details.
+// Postgres, Mux, Bcryp, Jwt, http...
 func main() {
-	initKeys()
 
-	happyStackDatabase = NewHappyStackDatabase()
-	defer happyStackDatabase.closeDatabase()
-
-	fmt.Println(SignKey)
-	fmt.Println(VerifyKey)
-
-	router := NewRouter()
-	log.Fatal(http.ListenAndServe(":8080", router))
-}
-
-func initKeys() {
-	sKey, err := ioutil.ReadFile(privateKeyPath)
-	if err != nil {
-		log.Fatal("Error reading private key")
-		return
+	app := App{
+		database:          NewPostGreSQLDatabase(),
+		router:            NewMuxRouter(),
+		encryptionService: NewBCryptEncryptionService(),
+		authService:       NewJWTAuthService(),
 	}
-	SignKey = sKey
-	vKey, err := ioutil.ReadFile(publicKeyPath)
-	if err != nil {
-		log.Fatal("Error reading public key")
-		return
-	}
-	VerifyKey = vKey
+	app.run()
 }
